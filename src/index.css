@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* HERO */
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(60px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-up {
+    animation: fade-up linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 35%;
+}
+
+/* CARDS */
+
+@keyframes reveal-card {
+    from {
+        opacity: 0;
+        transform: translateY(80px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.reveal-card {
+    animation: reveal-card linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 35%;
+}
+
+/* STATS */
+
+@keyframes zoom-in {
+    from {
+        opacity: 0;
+        scale: 0.7;
+    }
+
+    to {
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+.zoom-in {
+    animation: zoom-in linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+}
+
+/* FAQ */
+
+@keyframes slide-right {
+    from {
+        opacity: 0;
+        transform: translateX(-60px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.slide-right {
+    animation: slide-right linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+}
+
+/* CTA */
+
+@keyframes grow {
+    from {
+        opacity: 0;
+        scale: 0.9;
+    }
+
+    to {
+        opacity: 1;
+        scale: 1;
+    }
+}
+
+.grow {
+    animation: grow linear;
+    animation-timeline: view();
+    animation-range: entry 0% cover 40%;
+}
+
+/* FLOATING BLOBS */
+
+@keyframes float-1 {
+
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    50% {
+        transform: translate(40px, -40px);
+    }
+}
+
+@keyframes float-2 {
+
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    50% {
+        transform: translate(-40px, 40px);
+    }
+}
+
+.blob-1 {
+    animation: float-1 12s ease-in-out infinite;
+}
+
+.blob-2 {
+    animation: float-2 10s ease-in-out infinite;
+}

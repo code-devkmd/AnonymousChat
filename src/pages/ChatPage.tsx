@@ -2,6 +2,13 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 
+import { Link2, Copy, Check, X, SendHorizontal } from "lucide-react";
+
+import Loading from "../components/Loading";
+import MobileHamburger from "../components/MobileHamburger";
+import ChatTitleBlock from "../components/ChatTitleBlock";
+import ChatStatus from "../components/ChatStatus";
+
 interface Message {
     id: string;
     text: string;
@@ -15,7 +22,8 @@ interface RoomUser {
 }
 
 export default function ChatPage() {
-    const { roomId } = useParams();
+    const params = useParams<{ roomId: string }>();
+    const roomId = params.roomId ?? "";
     const navigate = useNavigate();
 
     const [isLoading, setIsLoading] = useState(true);
@@ -35,10 +43,31 @@ export default function ChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        inputRef.current?.focus();
+    }, []);
+
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setCopied(true);
+
+            setTimeout(() => {
+                setCopied(false);
+            }, 2000);
+        } catch (err) {
+            console.error("Failed to copy link", err);
+        }
+    };
+
     useEffect(() => {
         const verifyRoom = async () => {
             try {
-                const result = await fetch(`http://localhost:3001/api/rooms/${roomId}`);
+                const result = await fetch(`https://websocket-backend-a6nm.onrender.com/api/rooms/${roomId}`);
                 const data = await result.json();
 
                 if (!data.success) {
@@ -63,7 +92,7 @@ export default function ChatPage() {
         e.preventDefault();
         if (!username.trim()) return;
 
-        socketRef.current = io("http://localhost:3001");
+        socketRef.current = io("https://websocket-backend-a6nm.onrender.com");
 
         socketRef.current.emit("join_room", { roomId, username });
 
@@ -74,10 +103,10 @@ export default function ChatPage() {
             if (onlineCount === 1) {
                 setShowShareToast(true);
             } else {
-                setShowShareToast(false); 
+                setShowShareToast(false);
             }
         });
-        
+
         socketRef.current.on("receive_message", (message: Message) => {
             setMessages((prev) => [...prev, message]);
         });
@@ -156,7 +185,7 @@ export default function ChatPage() {
 
 
     if (isLoading) {
-        return <div className="h-screen flex items-center justify-center bg-slate-100">Loading...</div>;
+        return <Loading />
     }
 
     if (!hasJoined) {
@@ -170,6 +199,7 @@ export default function ChatPage() {
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Your Name</label>
                         <input
+                            ref={inputRef}
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
@@ -195,39 +225,14 @@ export default function ChatPage() {
                 <div className="flex items-center gap-3 min-w-0">
 
                     {/* Mobile hamburger */}
-                    <button
-                        onClick={() => setIsSidebarOpen(prev => !prev)}
-                        className="md:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                                d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
+                    <MobileHamburger setIsSidebarOpen={setIsSidebarOpen} />
 
                     {/* Title block */}
-                    <div className="min-w-0">
-                        <h1 className="text-base md:text-xl font-semibold text-slate-800 truncate">
-                            Anonymous Chat
-                        </h1>
-                        <p className="text-xs md:text-sm text-slate-500 flex flex-col md:flex-row md:gap-1">
-                            <span className="truncate">Room: {roomId}</span>
-                            <span className="hidden md:inline">•</span>
-                            <span>Joined as {username}</span>
-                        </p>
-                    </div>
+                    <ChatTitleBlock roomId={roomId} username={username} />
                 </div>
 
                 {/* Right section (status) */}
-                <div className="flex items-center">
-                    <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
-                        <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-
-                        <span className="text-xs md:text-sm font-medium text-slate-600 whitespace-nowrap">
-                            {onlineCount} online
-                        </span>
-                    </div>
-                </div>
+                {ChatStatus(onlineCount)}
             </header>
 
             {/* Core Application Body split layout */}
@@ -324,16 +329,24 @@ export default function ChatPage() {
                                 )}
                             </div>
 
-                            <form onSubmit={sendMessage} className="flex gap-2 sm:gap-3">
+                            <form onSubmit={sendMessage} className="flex items-center gap-2 sm:gap-3 w-full max-w-4xl mx-auto p-2">
+                                {/* Input Field */}
                                 <input
+                                    ref={inputRef}
                                     type="text"
                                     value={currentMessage}
                                     onChange={handleInputChange}
                                     placeholder="Type a message..."
-                                    className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 sm:py-3 text-sm outline-none focus:ring-2 focus:ring-slate-300 min-w-0"
+                                    className="flex-1 border border-slate-200 rounded-2xl px-4 py-3 text-sm outline-none transition-all duration-200 focus:border-slate-400 focus:ring-4 focus:ring-slate-100 min-w-0 bg-slate-50/50 focus:bg-white"
                                 />
-                                <button type="submit" className="bg-slate-900 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:opacity-90 transition font-medium text-sm whitespace-nowrap">
-                                    Send
+
+                                {/* Animated Submit Button */}
+                                <button
+                                    type="submit"
+                                    disabled={!currentMessage?.trim()}
+                                    className="group relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 bg-slate-900 text-white rounded-full shadow-md hover:bg-slate-800 active:scale-95 disabled:opacity-40 disabled:hover:bg-slate-900 disabled:active:scale-100 transition-all duration-200 shrink-0 select-none"
+                                >
+                                    <SendHorizontal className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />
                                 </button>
                             </form>
                         </div>
@@ -343,28 +356,54 @@ export default function ChatPage() {
             </div>
             {/* --- SHARE SUGGESTION TOAST --- */}
             {showShareToast && (
-                <div className="fixed bottom-24 right-4 left-4 sm:left-auto sm:max-w-sm bg-slate-900 text-white p-4 rounded-xl shadow-xl border border-slate-800 z-50 transition-all duration-300 animate-bounce">
+                <div className="fixed bottom-24 right-4 left-4 sm:left-auto sm:w-96 bg-slate-900/95 backdrop-blur-xl text-white p-4 rounded-2xl shadow-2xl border border-slate-800 z-50 animate-in slide-in-from-bottom-5 duration-300">
                     <div className="flex items-start gap-3">
-                        <div className="bg-slate-800 p-2 rounded-lg text-xl">🔗</div>
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-800 border border-slate-700">
+                            <Link2 size={20} />
+                        </div>
+
                         <div className="flex-1">
-                            <h3 className="font-semibold text-sm">You are the only one here!</h3>
-                            <p className="text-xs text-slate-400 mt-0.5">Share this room link with friends to start chatting right away.</p>
-                            <div className="mt-2 flex gap-2">
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(window.location.href);
-                                        alert("Link copied!");
-                                    }}
-                                    className="text-xs bg-white text-slate-900 font-medium px-2.5 py-1 rounded-md hover:bg-slate-100 transition"
-                                >
-                                    Copy Link
-                                </button>
+                            <div className="flex items-start justify-between gap-2">
+                                <div>
+                                    <h3 className="font-semibold text-sm">
+                                        You're the only one here
+                                    </h3>
+                                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                                        Share this room link with friends and start chatting together instantly.
+                                    </p>
+                                </div>
+
                                 <button
                                     onClick={() => setShowShareToast(false)}
-                                    className="text-xs text-slate-400 hover:text-white transition px-2 py-1"
+                                    className="text-slate-500 hover:text-white transition"
                                 >
-                                    Dismiss
+                                    <X size={16} />
                                 </button>
+                            </div>
+
+                            <div className="mt-3 flex items-center gap-2">
+                                <button
+                                    onClick={handleCopy}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-slate-900 hover:bg-slate-100 transition"
+                                >
+                                    {copied ? (
+                                        <>
+                                            <Check size={14} />
+                                            Copied
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy size={14} />
+                                            Copy Link
+                                        </>
+                                    )}
+                                </button>
+
+                                {copied && (
+                                    <span className="text-xs text-green-400 animate-in fade-in duration-200">
+                                        Link copied to clipboard
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>

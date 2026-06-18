@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
-// ^ UNCOMMENT THIS IN YOUR PROJECT. 
-// We are using a mock below to ensure this preview runs perfectly without setup.
+import { ArrowRight, Link2, Rocket, ShieldCheck, Smartphone, User, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-// --- CUSTOM HOOK: ANIMATION ON VIEW ---
 const useInView = (options = { threshold: 0.1, triggerOnce: true }) => {
     const [ref, setRef] = useState(null);
     const [inView, setInView] = useState(false);
@@ -26,7 +24,6 @@ const useInView = (options = { threshold: 0.1, triggerOnce: true }) => {
     return [setRef, inView];
 };
 
-// --- ANIMATION WRAPPER COMPONENT ---
 const AnimateOnView = ({ children, animation = "fade-up", delay = 0, duration = 700, className = "" }) => {
     const [ref, inView] = useInView({ threshold: 0.1, triggerOnce: true });
 
@@ -54,7 +51,6 @@ const AnimateOnView = ({ children, animation = "fade-up", delay = 0, duration = 
     );
 };
 
-// --- MAIN APPLICATION COMPONENT ---
 export default function App() {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +59,7 @@ export default function App() {
         setIsLoading(true);
         try {
             const result = await fetch(
-                "http://localhost:3001/api/rooms/create",
+                "https://websocket-backend-a6nm.onrender.com/api/rooms/create",
                 { method: "POST" }
             );
             const data = await result.json();
@@ -162,11 +158,9 @@ export default function App() {
                                     disabled={isLoading}
                                     className="px-8 py-4 rounded-2xl bg-slate-900 text-white font-semibold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 active:scale-95 flex items-center justify-center gap-2"
                                 >
-                                    {isLoading ? "Generating Secure Room..." : "Create Free Room"}
+                                    {isLoading ? "Creating room..." : "Create room"}
                                     {!isLoading && (
-                                        <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                        </svg>
+                                        <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform" />
                                     )}
                                 </button>
                                 <a
@@ -227,7 +221,9 @@ export default function App() {
                                     Type a message...
                                 </div>
                                 <div className="w-11 h-11 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-md">
-                                    <svg className="w-5 h-5 -ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                                    <svg className="w-5 h-5 -ml-0.5 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
                                 </div>
                             </div>
                         </div>
@@ -265,12 +261,12 @@ export default function App() {
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                     {[
-                        { title: "Instant Room Creation", icon: "⚡", desc: "Generate a unique room URL in milliseconds. No forms to fill." },
-                        { title: "No Accounts Required", icon: "👤", desc: "Skip registrations, emails, and passwords. Just click and talk." },
-                        { title: "Shareable Links", icon: "🔗", desc: "Invite participants simply by texting or emailing them the room URL." },
-                        { title: "Real-Time Messaging", icon: "🚀", desc: "Messages appear instantly via websockets without page refreshes." },
-                        { title: "Privacy Focused", icon: "🛡️", desc: "No usernames, profiles, or public histories to tie back to you." },
-                        { title: "Works Everywhere", icon: "📱", desc: "Fully responsive design runs perfectly on desktop, tablet, and mobile." }
+                        { title: "Instant Room Creation", icon: <Zap className="w-6 h-6 text-blue-600" />, desc: "Generate a unique room URL in a second. No forms to fill out." },
+                        { title: "No Accounts Required", icon: <User className="w-6 h-6 text-blue-600" />, desc: "Skip sign-up, email, or passwords. Just open the room and start talking." },
+                        { title: "Shareable Links", icon: <Link2 className="w-6 h-6 text-blue-600" />, desc: "Send a room link to anyone and they can join instantly." },
+                        { title: "Real-Time Messaging", icon: <Rocket className="w-6 h-6 text-blue-600" />, desc: "Messages arrive live through WebSocket so it feels immediate." },
+                        { title: "Privacy Focused", icon: <ShieldCheck className="w-6 h-6 text-blue-600" />, desc: "No usernames, profiles, or public chat history to track you." },
+                        { title: "Works Everywhere", icon: <Smartphone className="w-6 h-6 text-blue-600" />, desc: "The interface works smoothly on desktop, tablet, and mobile." }
                     ].map((feature, index) => (
                         <AnimateOnView key={feature.title} animation="fade-up" delay={index * 100}>
                             <div className="bg-white rounded-3xl border border-slate-200 p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full">
@@ -381,10 +377,10 @@ export default function App() {
                 <div className="max-w-4xl mx-auto px-6 text-center">
                     <AnimateOnView animation="scale">
                         <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900">
-                            Ready to Start Talking?
+                            Ready to start chatting?
                         </h2>
                         <p className="mt-6 text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
-                            Join thousands of users having secure, private conversations every day. No sign-up required.
+                            Start a private conversation now with no sign-up required.
                         </p>
 
                         <button

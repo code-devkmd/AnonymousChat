@@ -1,9 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { ArrowRight, Link2, Rocket, ShieldCheck, Smartphone, User, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+interface AnimateOnViewProps {
+    children: ReactNode;
+    animation?: "fade-up" | "fade-down" | "fade-left" | "fade-right" | "scale";
+    delay?: number;
+    duration?: number;
+    className?: string;
+}
+
 const useInView = (options = { threshold: 0.1, triggerOnce: true }) => {
-    const [ref, setRef] = useState(null);
+    const [ref, setRef] = useState<HTMLDivElement | null>(null);
     const [inView, setInView] = useState(false);
 
     useEffect(() => {
@@ -21,10 +29,10 @@ const useInView = (options = { threshold: 0.1, triggerOnce: true }) => {
         };
     }, [ref, options]);
 
-    return [setRef, inView];
+    return [setRef, inView] as const;
 };
 
-const AnimateOnView = ({ children, animation = "fade-up", delay = 0, duration = 700, className = "" }) => {
+const AnimateOnView = ({ children, animation = "fade-up", delay = 0, duration = 700, className = "" }: AnimateOnViewProps) => {
     const [ref, inView] = useInView({ threshold: 0.1, triggerOnce: true });
 
     const getTransform = () => {
@@ -139,7 +147,7 @@ export default function App() {
                         <AnimateOnView animation="fade-right" delay={150}>
                             <h1 className="mt-8 text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight text-slate-900">
                                 Talk Freely.<br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                                <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-600">
                                     Stay Anonymous.
                                 </span>
                             </h1>
@@ -175,7 +183,7 @@ export default function App() {
 
                     {/* Hero Mockup Card */}
                     <AnimateOnView animation="fade-left" delay={200} className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-[2.5rem] transform rotate-3 scale-[1.02] opacity-10"></div>
+                        <div className="absolute inset-0 bg-linear-to-tr from-blue-500 to-indigo-500 rounded-[2.5rem] transform rotate-3 scale-[1.02] opacity-10"></div>
                         <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white p-6 sm:p-8 relative">
                             {/* Browser/Window Header */}
                             <div className="flex items-center gap-2 mb-8 pb-4 border-b border-slate-100">

@@ -75,7 +75,7 @@ export default function ChatPage() {
     useEffect(() => {
         const verifyRoom = async () => {
             try {
-                const result = await fetch(`http://localhost:3001/api/rooms/${roomId}`);
+                const result = await fetch(`https://websocket-backend-a6nm.onrender.com/api/rooms/${roomId}`);
                 const data = await result.json();
 
                 if (!data.success) {
@@ -103,7 +103,7 @@ export default function ChatPage() {
 
         setJoinError(null);
 
-        socketRef.current = io("http://localhost:3001");
+        socketRef.current = io("https://websocket-backend-a6nm.onrender.com");
         const socket = socketRef.current;
 
         socket.on("connect_error", (error) => {

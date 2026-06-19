@@ -14,6 +14,7 @@ interface Message {
     text: string;
     sender: string;
     type: "user" | "system";
+    timestamp?: string;
 }
 
 interface RoomUser {
@@ -29,6 +30,7 @@ export default function ChatPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [hasJoined, setHasJoined] = useState(false);
     const [username, setUsername] = useState("");
+    const [joinError, setJoinError] = useState<string | null>(null);
 
     const [showShareToast, setShowShareToast] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -64,10 +66,16 @@ export default function ChatPage() {
         }
     };
 
+    const formatTime = (dateString?: string) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
     useEffect(() => {
         const verifyRoom = async () => {
             try {
-                const result = await fetch(`https://websocket-backend-a6nm.onrender.com/api/rooms/${roomId}`);
+                const result = await fetch(`http://localhost:3001/api/rooms/${roomId}`);
                 const data = await result.json();
 
                 if (!data.success) {
@@ -90,13 +98,26 @@ export default function ChatPage() {
 
     const handleJoin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!username.trim()) return;
+        const trimmedUsername = username.trim();
+        if (!trimmedUsername) return;
 
-        socketRef.current = io("https://websocket-backend-a6nm.onrender.com");
+        setJoinError(null);
 
-        socketRef.current.emit("join_room", { roomId, username });
+        socketRef.current = io("http://localhost:3001");
+        const socket = socketRef.current;
 
-        socketRef.current.on("room_stats", ({ onlineCount, users }: { onlineCount: number, users: RoomUser[] }) => {
+        socket.on("connect_error", (error) => {
+            console.error("Socket connect error:", error);
+            setJoinError("Unable to connect to chat server.");
+            socket.disconnect();
+            socketRef.current = null;
+        });
+
+        socket.on("load_messages", (previousMessages: Message[]) => {
+            setMessages(previousMessages);
+        });
+
+        socket.on("room_stats", ({ onlineCount, users }: { onlineCount: number, users: RoomUser[] }) => {
             setOnlineCount(onlineCount);
             setRoomUsers(users);
 
@@ -107,27 +128,31 @@ export default function ChatPage() {
             }
         });
 
-        socketRef.current.on("receive_message", (message: Message) => {
+        socket.on("receive_message", (message: Message) => {
             setMessages((prev) => [...prev, message]);
         });
 
-        socketRef.current.on("user_typing", ({ username: typingUser }) => {
+        socket.on("user_typing", ({ username: typingUser }) => {
             setTypingUsers((prev) => {
                 if (prev.includes(typingUser)) return prev;
                 return [...prev, typingUser];
             });
         });
 
-        socketRef.current.on("user_stopped_typing", ({ username: typingUser }) => {
+        socket.on("user_stopped_typing", ({ username: typingUser }) => {
             setTypingUsers((prev) => prev.filter((user) => user !== typingUser));
         });
 
-        socketRef.current.on("room_stats", ({ onlineCount, users }: { onlineCount: number, users: RoomUser[] }) => {
-            setOnlineCount(onlineCount);
-            setRoomUsers(users);
-        });
+        socket.emit("join_room", { roomId, username: trimmedUsername }, (response: { success: boolean; message?: string }) => {
+            if (!response.success) {
+                setJoinError(response.message || "Could not join room.");
+                socket.disconnect();
+                socketRef.current = null;
+                return;
+            }
 
-        setHasJoined(true);
+            setHasJoined(true);
+        });
     };
 
     const isTypingRef = useRef(false);
@@ -164,7 +189,8 @@ export default function ChatPage() {
             id: Date.now().toString(),
             text: currentMessage,
             sender: username,
-            type: "user"
+            type: "user",
+            timestamp: new Date().toISOString()
         };
 
         socketRef.current.emit("send_message", { roomId, message: newMessage });
@@ -176,9 +202,11 @@ export default function ChatPage() {
     useEffect(() => {
         return () => {
             if (socketRef.current) {
+                socketRef.current.off("load_messages");
                 socketRef.current.off("receive_message");
                 socketRef.current.off("user_typing");
                 socketRef.current.off("user_stopped_typing");
+                socketRef.current.off("room_stats");
             }
         };
     }, []);
@@ -196,6 +224,14 @@ export default function ChatPage() {
                         <h1 className="text-2xl font-bold text-slate-800">Join Room</h1>
                         <p className="text-sm text-slate-500 mt-1">Room ID: {roomId}</p>
                     </div>
+
+                    {/* --- DISPLAY USERNAME ERROR HERE --- */}
+                    {joinError && (
+                        <div className="bg-red-50 text-red-600 text-xs px-4 py-2.5 rounded-xl border border-red-100 font-medium">
+                            {joinError}
+                        </div>
+                    )}
+
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Your Name</label>
                         <input
@@ -293,9 +329,20 @@ export default function ChatPage() {
                                 return (
                                     <div key={index} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                                         <div className="flex flex-col gap-1 max-w-[85%] sm:max-w-[75%]">
-                                            {!isMe && <span className="text-xs text-slate-500 ml-2">{msg.sender}</span>}
-                                            <div className={`${isMe ? "bg-slate-900 text-white" : "bg-white text-slate-800 border"} rounded-2xl px-4 py-2.5 shadow-sm text-sm sm:text-base wrap-break-word`}>
+                                            {!isMe && (
+                                                <div className="flex items-baseline gap-2 ml-2">
+                                                    <span className="text-xs font-medium text-slate-600">{msg.sender}</span>
+                                                    <span className="text-[10px] text-slate-400">{formatTime(msg.timestamp)}</span>
+                                                </div>
+                                            )}
+                                            <div className={`${isMe ? "bg-slate-900 text-white" : "bg-white text-slate-800 border"} rounded-2xl px-4 py-2.5 shadow-sm text-sm sm:text-base break-words relative group`}>
                                                 <p>{msg.text}</p>
+                                                {/* For the sender, show the time inside the bubble */}
+                                                {isMe && (
+                                                    <span className="text-[10px] text-slate-400 block text-right mt-1 select-none">
+                                                        {formatTime(msg.timestamp)}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
